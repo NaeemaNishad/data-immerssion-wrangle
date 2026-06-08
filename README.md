@@ -1,4 +1,11 @@
-## Data Dictionary
+# E-Commerce Data Immersion & Wrangling Pipeline
+
+## 📌 Project Objective
+This repository contains the deliverables for Task 1 of my Data Analytics Internship. The goal of this project is to profile, clean, and transform a raw e-commerce dataset simulating 8,000 users into a pristine, analysis-ready format optimized for downstream business intelligence and predictive modeling.
+
+---
+
+## 📊 Data Dictionary
 
 | Column Name | Data Type | Description | Business Relevance |
 | :--- | :--- | :--- | :--- |
@@ -16,3 +23,22 @@
 | `avg_session_time` | Float | Historical average duration of the user's web sessions. | Establishes a baseline behavior profile for personalizing user experiences. |
 | `bounce_rate` | Float | Percentage of single-page sessions with zero interaction. | Higher bounce rates alert tech teams to slow load speeds or poor landing pages. |
 | `purchase` | Binary (0/1) | Target Variable: 1 if an order was placed; 0 if they left without buying. | The ultimate metric to measure business revenue and growth success. |
+| `age_group` | Categorical | **[Engineered]** Binned age categories (Gen Z, Millennials, Gen X, Seniors). | Allows targeted demographic reporting and user grouping. |
+| `pages_per_minute` | Float | **[Engineered]** Browsing speed metric (`pages_viewed` / `time_on_site`). | Measures active user navigation intensity. |
+
+---
+
+## 🔍 Data Quality Assessment (DQA) & Findings
+During the initial profiling stage, the following data anomalies were discovered:
+* **Missing Values:** The raw dataset contained 8,000 entries, but every column possessed systematic missing data (`NaN` values), leaving only 7,840 fully non-null records.
+* **Type Inconsistencies:** Key structural fields like `user_id` and `age` were improperly cast as floating-point decimals instead of standard integers.
+
+---
+
+## 🛠️ Cleaning & Transformation Steps
+The automated pipeline in `data_cleaning.py` performs the following operations:
+1.  **Row Remediation:** Drops records with missing `user_id` values to prevent anonymous mapping errors.
+2.  **Imputation:** Fills numerical gaps with column **medians** to mitigate outlier distortion, replaces missing categorical indicators with `'Unknown'`, and handles empty tracking flags with `0`.
+3.  **Data Type Standardization:** Explicitly casts identifiers, metrics, and binary tracking parameters into memory-efficient integer types.
+4.  **Feature Engineering:** * Generates `age_group` demographic bins to sort shoppers into marketing cohorts.
+    * Calculates a composite `pages_per_minute` engagement metric with a division safe-guard ($+1e-5$) against zero-minute anomalies.
