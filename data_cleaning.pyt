@@ -1,43 +1,55 @@
 import pandas as pd
 import numpy as np
+import os
 
-file_path = r"C:\Users\naeem\OneDrive\Desktop\Naeema\Ecommerce_Internship_Project\ecommerce_user_behavior_8000.csv"
-df = pd.read_csv(file_path)
+# 1. Path Configuration
+folder_path = r"C:\Users\naeem\OneDrive\Desktop\Naeema\dataanalytics_Internship_Project"
+input_file = os.path.join(folder_path, "ApexPlanet_DataAnalytics_Dataset.xlsx")
+output_file = os.path.join(folder_path, "cleaned_apexplanet_sales_2026.csv")
 
-print("Starting Data Wrangling Pipeline...\n")
+print("Initializing ApexPlanet Data Analytics Cleaning Pipeline...\n")
 
+# Load raw excel data
+df = pd.read_excel(input_file)
+
+# --- STEP 1: REMEDIATION & IMPUTATION ---
+
+# Check and remove exact duplicates if present
 initial_rows = df.shape[0]
 df.drop_duplicates(inplace=True)
-print(f"Dropped {initial_rows - df.shape[0]} exact duplicate rows.")
+print(f"Removed {initial_rows - df.shape[0]} duplicate entries.")
 
-df.dropna(subset=['user_id'], inplace=True)
+# Fill missing numerical customer ages with the median age 
+df['Age'] = df['Age'].fillna(df['Age'].median())
 
-df['gender'] = df['gender'].fillna('Unknown')
-df['device_type'] = df['device_type'].fillna('Unknown')
+# Fill missing categorical cities with 'Unknown'
+df['City'] = df['City'].fillna('Unknown')
 
-numerical_cols = ['age', 'time_on_site', 'pages_viewed', 'previous_purchases', 
-                  'cart_items', 'avg_session_time', 'bounce_rate']
-for col in numerical_cols:
-    df[col] = df[col].fillna(df[col].median())
 
-binary_cols = ['discount_seen', 'ad_clicked', 'returning_user', 'purchase']
-for col in binary_cols:
-    df[col] = df[col].fillna(0)
+# --- STEP 2: TYPE STANDARDIZATION ---
 
-int_cols = ['user_id', 'age', 'pages_viewed', 'previous_purchases', 'cart_items', 
-            'discount_seen', 'ad_clicked', 'returning_user', 'purchase']
-for col in int_cols:
-    df[col] = df[col].astype(int)
+# Convert Date strings into active Pandas Datetime types
+df['Order_Date'] = pd.to_datetime(df['Order_Date'])
 
+# Cast Age from a float decimal layout into clear integers
+df['Age'] = df['Age'].astype(int)
+
+
+# --- STEP 3: FEATURE ENGINEERING ---
+
+# Feature 1: Demographic Grouping (Age Cohorts)
 age_bins = [0, 25, 45, 65, np.inf]
-age_labels = ['Gen Z / Youth', 'Millennials / Young Adults', 'Gen X / Middle Aged', 'Seniors']
-df['age_group'] = pd.cut(df['age'], bins=age_bins, labels=age_labels)
+age_labels = ['Gen Z', 'Millennials', 'Gen X', 'Seniors']
+df['Age_Group'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels)
 
-df['pages_per_minute'] = round(df['pages_viewed'] / (df['time_on_site'] + 1e-5), 2)
+# Feature 2: Time Intelligence Key (Year-Month extraction)
+df['Year_Month'] = df['Order_Date'].dt.to_period('M').astype(str)
 
-output_path = r"C:\Users\naeem\OneDrive\Desktop\Naeema\Ecommerce_Internship_Project\cleaned_ecommerce_user_behavior_2026.csv"
-df.to_csv(output_path, index=False)
 
-print("\n--- CLEANED DATA SUMMARY ---")
+# --- STEP 4: VALIDATION & OUTPUT ---
+print("\n--- CLEANED PIPELINE METRICS ---")
 df.info()
-print(f"\nPipeline Executed Successfully! Cleaned file saved to: {output_path}")
+
+# Export clean version as a CSV for easy upload & database ingestion
+df.to_csv(output_file, index=False)
+print(f"\nPipeline successfully saved your new dataset to:\n{output_file}")
